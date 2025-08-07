@@ -27,3 +27,14 @@ def custom_serializer(obj):
             return int(obj)
         case _:
             raise TypeError("Type not serializable")
+
+
+def run_query(connection, q: str) -> tuple[list, list]:
+    with connection.cursor() as cursor:
+        cursor.execute(q)
+
+        rows = cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+
+        return columns, rows
