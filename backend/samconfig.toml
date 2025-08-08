@@ -1,0 +1,22 @@
+version = 0.1
+
+[prod]
+[prod.deploy]
+[prod.deploy.parameters]
+stack_name = "semaia"
+s3_bucket = "583168578067-sam"
+s3_prefix = "semaia"
+region = "ca-central-1"
+profile = "personal"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = """
+    Env=\"prod\"
+    GeminiApiKey=\"arn:aws:secretsmanager:ca-central-1:583168578067:secret:semaia-gemini-api-key-4PSvsW\"
+"""
+image_repositories = []
+tags = """
+    application=\"semaia\"
+    AppManagerCFNStackKey=\"semaia\"
+"""
+
