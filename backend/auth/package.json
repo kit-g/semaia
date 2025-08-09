@@ -1,0 +1,9 @@
+{
+  "name": "semaia-edge-authorizer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "app.js",
+  "dependencies": {
+    "jose": "^6.0.12"
+  }
+}
