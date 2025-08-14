@@ -10,6 +10,26 @@ const JWKS = createRemoteJWKSet(new URL(JWKS_URL));
 export const handler = async (event) => {
     const req = event.Records[0].cf.request;
     const authz = req.headers.authorization?.[0]?.value || "";
+    const method = (req.method || "GET").toUpperCase();
+    if (method === "OPTIONS") {
+        return {
+            status: "200",
+            headers: {
+                "access-control-allow-origin": [{key: "Access-Control-Allow-Origin", value: "*"}],
+                "access-control-allow-methods": [{
+                    key: "Access-Control-Allow-Methods",
+                    value: "GET,POST,PUT,DELETE,OPTIONS"
+                }],
+                "access-control-allow-headers": [{
+                    key: "Access-Control-Allow-Headers",
+                    value: "authorization,content-type"
+                }],
+                "cache-control": [{key: "Cache-Control", value: "no-store"}],
+                "content-type": [{key: "Content-Type", value: "application/json"}],
+            },
+            body: "{}",
+        };
+    }
 
     if (!authz.startsWith("Bearer ")) {
         return deny(401, "Missing bearer token");
