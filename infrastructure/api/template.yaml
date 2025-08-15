@@ -18,7 +18,6 @@ Mappings:
       CloudFrontCertificate: "arn:aws:acm:us-east-1:583168578067:certificate/a75e5272-2b90-45d2-abbd-0b52b158f1d7"
       CloudFrontDomainName: "semaia.awry.me"
       GatewayCertificate: "arn:aws:acm:us-east-1:583168578067:certificate/eebb2e14-3cd9-437c-a131-c494b4b83d3f"
-      GatewayDomainName: "api.semaia.awry.me"
 
 Parameters:
   Env:
