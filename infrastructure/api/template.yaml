@@ -1,0 +1,250 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Semaia main stack"
+Transform: "AWS::Serverless-2016-10-31"
+
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 128
+    Handler: app.handler
+    Timeout: 5
+    Environment:
+      Variables:
+        REGION: !Ref AWS::Region
+
+Mappings:
+  Env:
+    prod:
+      CloudFrontCertificate: "arn:aws:acm:us-east-1:583168578067:certificate/a75e5272-2b90-45d2-abbd-0b52b158f1d7"
+      CloudFrontDomainName: "semaia.awry.me"
+      GatewayCertificate: "arn:aws:acm:us-east-1:583168578067:certificate/eebb2e14-3cd9-437c-a131-c494b4b83d3f"
+      GatewayDomainName: "api.semaia.awry.me"
+
+Parameters:
+  Env:
+    Type: String
+  GeminiApiKey:
+    Type: String
+    NoEcho: true
+  TableName:
+    Type: String
+    Default: "semaia-db"
+  LayersBucket:
+    Type: String
+    Default: "583168578067-lambda-layers"
+
+Resources:
+  WorkoutsDatabase:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: false
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      TableName: !Ref TableName
+
+  ApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      Policies:
+        - PolicyName: "DynamoDBAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt WorkoutsDatabase.Arn
+
+  PsycopgLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: "psycopg2"
+      Description: "Lambda Layer for psycopg2 library"
+      Content:
+        S3Bucket: !Ref LayersBucket
+        S3Key: "psycopg-py3.12-layer.zip"
+      CompatibleRuntimes: [ python3.12 ]
+      CompatibleArchitectures: [ x86_64 ]
+
+  PsycopgLayerPermission:
+    Type: AWS::Lambda::LayerVersionPermission
+    Properties:
+      Action: lambda:GetLayerVersion
+      LayerVersionArn: !Ref PsycopgLayer
+      Principal: "*"
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../backend/api
+      Description: 'Part of Semaia: API handler'
+      Handler: run.sh
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: RESPONSE_STREAM
+          AWS_LWA_ENABLE_COMPRESSION: "false"
+          GEMINI_API_KEY: !Sub '{{resolve:secretsmanager:${GeminiApiKey}:SecretString:GEMINI_API_KEY}}'
+          PYTHONPATH: "/opt/python:${PYTHONPATH}"
+          TABLE_NAME: !Ref TableName
+      FunctionName: 'semaia-api'
+      FunctionUrlConfig:
+        AuthType: AWS_IAM
+        InvokeMode: RESPONSE_STREAM
+      Layers:
+        - !Ref PsycopgLayer
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:25"
+      Role: !GetAtt ApiRole.Arn
+      Timeout: 60
+
+  SiteHostingBucket:
+    DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::AccountId}-semaia-app"
+
+  CloudFrontOriginIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: 'Origin identity'
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: 'cf-bucket-policy'
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginIdentity}"
+            Action: 's3:GetObject'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref SiteHostingBucket
+                - /*
+      Bucket: !Ref SiteHostingBucket
+
+  ApiOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: "semaia-api-oac"
+        Description: "Semaia APU function OAC"
+        OriginAccessControlOriginType: lambda
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  OriginRequestPolicyAuth:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: semaia-origin-request-policy
+        HeadersConfig:
+          HeaderBehavior: whitelist
+          Headers: [ "x-user-uid", "x-user-email" ]
+        CookiesConfig: { CookieBehavior: none }
+        QueryStringsConfig: { QueryStringBehavior: all }
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        CacheBehaviors:
+          - PathPattern: "/api/*"
+            TargetOriginId: "api"
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [ GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE ]
+            CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
+            LambdaFunctionAssociations:
+              - EventType: viewer-request
+                IncludeBody: false
+                LambdaFunctionARN: "arn:aws:lambda:us-east-1:583168578067:function:semaia-edge-authorizer:7"
+            OriginRequestPolicyId: !Ref OriginRequestPolicyAuth
+
+        Comment: 'Semaia web app'
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - PATCH
+            - DELETE
+          CachePolicyId: "658327ea-f89d-4fab-a63d-7e88639e58f6"  # CachingOptimized
+          TargetOriginId: !Ref SiteHostingBucket
+          ViewerProtocolPolicy: redirect-to-https
+        #          ForwardedValues:
+        #            QueryString: 'false'
+        #            Cookies:
+        #              Forward: none
+        #        Aliases: [ !Ref Domain ]
+        #        ViewerCertificate:
+        #          AcmCertificateArn: !Ref CloudFrontCertificate
+        #          SslSupportMethod: 'sni-only'
+        Enabled: 'true'
+        Origins:
+          - Id: !Ref SiteHostingBucket
+            DomainName: !GetAtt SiteHostingBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginIdentity}"
+          - Id: "api"
+            DomainName: !Select
+              - 0
+              - !Split
+                - "/"
+                - !Select [ 1, !Split [ "://", !GetAtt ApiFunctionUrl.FunctionUrl ] ]  # correct
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              HTTPSPort: 443
+              OriginSSLProtocols: [ TLSv1.2 ]
+            OriginAccessControlId: !GetAtt ApiOAC.Id
+
+  ApiFunctionUrlPermissionForCF:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunctionUrl
+      FunctionName: !GetAtt ApiFunction.Arn             # or !GetAtt ApiFunction.Arn
+      Principal: cloudfront.amazonaws.com
+      FunctionUrlAuthType: AWS_IAM
+      SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+Outputs:
+  FunctionUrl:
+    Description: "API Function URL"
+    Value: !GetAtt ApiFunctionUrl.FunctionUrl  # correct
+
+  Distribution:
+    Description: "Part of Semaia: web app's distribution"
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-distribution"
