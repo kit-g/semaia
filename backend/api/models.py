@@ -1,16 +1,17 @@
 import os
-from dataclasses import dataclass, asdict
-from datetime import datetime
+from dataclasses import dataclass
 from functools import wraps
-from typing import Final, Any, Self, TypeVar, Callable
+from typing import Final, Any, Self, TypeVar, Callable, Dict
 
-from dynamo import TypedModelWithSortableKey, Ksuid, db
-from utils import snake_to_camel
+from dynamo import TypedModelWithSortableKey, Ksuid, db, DynamoModel
+from utils import snake_to_camel  # noqa
 
 from errors import NotFound
 
 user_type: Final[str] = 'USER'
 connector_type: Final[str] = 'CONNECTOR'
+chat_type: Final[str] = 'CHAT'
+_max_rows = 250
 
 
 @dataclass
@@ -93,10 +94,11 @@ class Connector(TypedModelWithSortableKey):
         }
 
     def to_dict(self) -> dict:
+        inspection = {'inspection': self.inspection} if self.inspection else {}
         return {
             **self.to_connection(),
             'name': self.name,
-            'inspection': self.inspection,
+            **inspection,
         }
 
     def public(self) -> dict:
@@ -112,6 +114,149 @@ class Connector(TypedModelWithSortableKey):
 
 F = TypeVar('F', bound=Callable[..., dict])
 _table = os.environ['TABLE_NAME']
+
+
+@dataclass
+class Message(DynamoModel):
+    message: str
+    response: str
+    id: Ksuid = None
+
+    def __post_init__(self):
+        if self.id is None:
+            self.id = Ksuid()
+
+    def _to_item(self) -> Dict[str, Any]:
+        return {
+            'message': self.message,
+            'response': self.response,
+            'id': f'{self.id}',
+        }
+
+    def to_dict(self) -> dict:
+        return self._to_item()
+
+    @classmethod
+    def from_item(cls, record: dict) -> Self:
+        return cls(
+            message=record['message']['S'],
+            response=record['response']['S'],
+            id=Ksuid.from_base62(record['id']['S']),
+        )
+
+    def to_llm(self) -> list[dict[str, str]]:
+        return [
+            {'role': 'model', 'parts': [{'text': self.response}]},
+            {'role': 'user', 'parts': [{'text': self.message}]},
+        ]
+
+
+@dataclass
+class Chat(TypedModelWithSortableKey):
+    initial_query: str
+    initial_prompt: str
+    connector_id: str
+    user_id: str
+    messages: list[Message] = None
+    _id: Ksuid = None
+    _pk: str = None
+    _sk: str = None
+
+    def _to_item(self) -> dict[str, Any]:
+        return self.item_pk | self.item_sk | {
+            'connector_id': self.connector_id,
+            'user_id': self.user_id,
+            'initial_query': self.initial_query,
+            'initial_prompt': self.initial_prompt,
+            'messages': [
+                {'M': each.to_item()} for each in self.messages
+            ],
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict, user_id: str, connector_id: str) -> Self:
+        return cls(
+            initial_query=d['query'],
+            initial_prompt=d['prompt'],
+            connector_id=connector_id,
+            user_id=user_id,
+            _id=Ksuid(),
+        )
+
+    @classmethod
+    def from_item(cls, record: dict) -> Self:
+        sk = record['SK']['S']
+        _id = sk.split('#')[1]
+        pk = record['PK']['S']
+        user_id = pk.split('#')[1]
+        messages = record.get('messages', {}).get('L', [])
+        return cls(
+            _id=_id,
+            _pk=pk,
+            _sk=sk,
+            user_id=user_id,
+            initial_query=record['initial_query']['S'],
+            initial_prompt=record['initial_prompt']['S'],
+            connector_id=record['connector_id']['S'],
+            messages=[
+                Message.from_item(each['M']) for each in messages
+            ]
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self._id,
+            'query': self.initial_query,
+            'prompt': self.initial_prompt,
+            'messages': [
+                each.to_dict() for each in self.messages
+            ],
+        }
+
+    @property
+    def type(self) -> str:
+        return chat_type
+
+    @property
+    def pk(self) -> str:
+        return self._pk or f'{user_type}#{self.user_id}'
+
+    @property
+    def sk(self) -> str:
+        return self._sk or f'{self.type}#{self._id}'
+
+    @property
+    def id(self) -> Ksuid:
+        return self._id
+
+    def limited_query(self) -> str:
+        sanitized = self.initial_query.strip().rstrip(';')
+        return f"WITH q AS ({sanitized}) SELECT * FROM q LIMIT {_max_rows};"
+
+    def add(self, message: Message) -> None:
+        if not self.messages:
+            self.messages = []
+        self.messages.append(message)
+
+    @staticmethod
+    def query_pk(user_id: str) -> dict:
+        return {
+            'PK': {'S': f'{user_type}#{user_id}'},
+        }
+
+    @staticmethod
+    def key(user_id: str, chat_id: str) -> dict:
+        return {
+            **Chat.query_pk(user_id),
+            'SK': {'S': f'{chat_type}#{chat_id}'},
+        }
+
+    def to_history(self) -> list[dict[str, str]]:
+        messages = sorted(self.messages or [], key=lambda m: m.id)
+        return [
+            part for message in messages
+            for part in message.to_llm()
+        ]
 
 
 def _get_connector(connector_id: str, user_id: str) -> Connector | None:
@@ -133,5 +278,27 @@ def with_connector(func: F) -> F:
             raise NotFound(f'connector {connector_id} not found')
 
         return func(connector, *args, **kwargs)
+
+    return wrapper
+
+
+def _get_chat(chat_id: str, user_id: str) -> Chat | None:
+    response = db().get_item(
+        TableName=_table,
+        Key=Chat.key(user_id, chat_id)
+    )
+    match response:
+        case {'Item': item}:
+            return Chat.from_item(item)
+    return None
+
+
+def with_chat(func: F) -> F:
+    @wraps(func)
+    def wrapper(chat_id: str, user_id: str, *args, **kwargs) -> dict:
+        chat = _get_chat(chat_id, user_id)
+        if chat is None:
+            raise NotFound(f'Chat {chat_id} not found')
+        return func(chat, *args, **kwargs)
 
     return wrapper
