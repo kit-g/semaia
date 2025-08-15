@@ -24,10 +24,15 @@ Resources:
     Properties:
       Architectures: [ x86_64 ]
       AutoPublishAlias: live
-      CodeUri: ./auth
+      CodeUri: ../../backend/auth
       Description: 'Part of Semaia: CF authorizer'
       FunctionName: 'semaia-edge-authorizer'
       Handler: app.handler
       Role: !GetAtt AuthFunctionRole.Arn
       Runtime: nodejs22.x
       Timeout: 5
+
+Outputs:
+  AuthFunctionVersionArn:
+    Description: ARN of the AuthFunction version"
+    Value: !Ref AuthFunction.Version
