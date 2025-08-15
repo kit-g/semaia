@@ -3,12 +3,12 @@ import os
 from textwrap import dedent
 
 from dynamo import db
+from utils import custom_serializer, run_query
 
 import q as queries
 from db import run, connect
 from errors import EmptyResponse, IncorrectSignature
-from models import user_type, connector_type, Connector, Chat, with_connector, Message
-from utils import custom_serializer, run_query
+from models import user_type, connector_type, Connector, with_connector
 
 _table = os.environ['TABLE_NAME']
 
@@ -73,7 +73,7 @@ def edit(connector_id: str, user_id: str, params: dict) -> dict:
 
 
 def delete(connector_id: str, user_id: str) -> dict:
-    response = db().delete_item(
+    _ = db().delete_item(
         TableName=_table,
         Key=Connector.key(user_id, connector_id)
     )
