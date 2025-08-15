@@ -16,6 +16,24 @@ _max_rows = 250
 
 @dataclass
 class Connector(TypedModelWithSortableKey):
+    """
+    Represents a database connector model and manages related data.
+
+    This class is designed to encapsulate all the necessary properties and methods
+    required to manage database connection details, serialization, and key
+    management for persistence. It integrates ease of data transformation between
+    dictionary and object forms, supports primary and sort key generation, and
+    provides public views of its data.
+
+    :ivar host: The database host URL or address.
+    :ivar port: The port number for database connection.
+    :ivar username: The username used for database access.
+    :ivar password: The password used for database access.
+    :ivar database: The name of the connected database.
+    :ivar user_id: The unique identifier of the user associated with the connector.
+    :ivar inspection: Represents optional inspection-related metadata.
+    :ivar name: Optional name identifier for the connector.
+    """
     host: str
     port: str
     username: str
@@ -118,6 +136,20 @@ _table = os.environ['TABLE_NAME']
 
 @dataclass
 class Message(DynamoModel):
+    """
+    Represents a Message entity used within a DynamoDB model.
+
+    This class encapsulates a message and its associated response,
+    along with a unique identifier (id). It provides methods for
+    serialization to and from DynamoDB items, as well as support for
+    formatting the data in specific structures such as LLM-compatible
+    output.
+
+    :ivar message: The content of the message.
+    :ivar response: The content of the associated response.
+    :ivar id: A unique identifier for the message, defaulting to
+        a new Ksuid instance if not provided.
+    """
     message: str
     response: str
     id: Ksuid = None
@@ -153,6 +185,22 @@ class Message(DynamoModel):
 
 @dataclass
 class Chat(TypedModelWithSortableKey):
+    """
+    Represents a chat session, encapsulating details about queries, prompts, user associations, and
+    messages. This class is designed to store and manage data related to chat interactions, facilitating
+    serialization and deserialization for persistence and retrieval.
+
+    This class provides methods to manage chat messages and convert data between different formats,
+    such as dictionaries and internal representations, while maintaining the association with its
+    user and connector.
+
+    :ivar initial_query: The initial query text associated with the chat session.
+    :ivar initial_prompt: The initial prompt text provided during the chat session.
+    :ivar connector_id: The identifier linking the chat session to a specific connector.
+    :ivar user_id: The identifier of the user associated with the chat session.
+    :ivar messages: A list of `Message` objects representing the communication history of the chat.
+    :type messages: list[Message] or None
+    """
     initial_query: str
     initial_prompt: str
     connector_id: str
@@ -271,6 +319,17 @@ def _get_connector(connector_id: str, user_id: str) -> Connector | None:
 
 
 def with_connector(func: F) -> F:
+    """
+    A decorator that wraps a function to provide a connector object to it. The
+    decorator retrieves a connector using the given connector ID and user ID,
+    and passes the connector as the first argument to the decorated function.
+    If the connector does not exist, a NotFound exception is raised.
+
+    :param func: The function to be wrapped by the decorator. It must accept
+                 the connector object as its first argument, followed by
+                 its original parameters.
+    :return: The wrapped function that provides a connector as the first argument.
+    """
     @wraps(func)
     def wrapper(connector_id: str, user_id: str, *args, **kwargs) -> dict:
         connector = _get_connector(connector_id, user_id)
@@ -294,6 +353,16 @@ def _get_chat(chat_id: str, user_id: str) -> Chat | None:
 
 
 def with_chat(func: F) -> F:
+    """
+    A decorator function that provides the fetched chat object as an argument to the
+    wrapped function. It ensures the chat object exists before invoking the wrapped
+    function and raises an error if the chat object is not found.
+
+    :param func: The function to be wrapped by the decorator.
+    :raises NotFound: If the chat object could not be found for the provided `chat_id`.
+    :return: The wrapped function that will be called with the fetched chat object
+             as its first argument.
+    """
     @wraps(func)
     def wrapper(chat_id: str, user_id: str, *args, **kwargs) -> dict:
         chat = _get_chat(chat_id, user_id)
