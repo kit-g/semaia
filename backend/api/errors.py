@@ -17,7 +17,8 @@ class IncorrectSignature(Exception):
 
 
 class Unauthorized(Exception):
-    pass
+    def __str__(self):
+        return 'Unauthorized'
 
 
 @dataclass
