@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Semaia CloudFront authorizer"
+Transform: "AWS::Serverless-2016-10-31"
+
+Resources:
+  AuthFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: semaia-edge-authorizer-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - edgelambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: [ x86_64 ]
+      AutoPublishAlias: live
+      CodeUri: ./auth
+      Description: 'Part of Semaia: CF authorizer'
+      FunctionName: 'semaia-edge-authorizer'
+      Handler: app.handler
+      Role: !GetAtt AuthFunctionRole.Arn
+      Runtime: nodejs22.x
+      Timeout: 5

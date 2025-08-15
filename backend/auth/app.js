@@ -22,7 +22,7 @@ export const handler = async (event) => {
                 }],
                 "access-control-allow-headers": [{
                     key: "Access-Control-Allow-Headers",
-                    value: "authorization,content-type"
+                    value: "*"
                 }],
                 "cache-control": [{key: "Cache-Control", value: "no-store"}],
                 "content-type": [{key: "Content-Type", value: "application/json"}],

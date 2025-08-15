@@ -1,0 +1,17 @@
+version = 0.1
+[prod]
+[prod.deploy]
+[prod.deploy.parameters]
+stack_name = "semaia-auth"
+s3_bucket = "583168578067-sam-us-east-1"
+s3_prefix = "semaia-auth"
+region = "us-east-1"
+profile = "personal"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+image_repositories = []
+tags = """
+    application=\"semaia\"
+    AppManagerCFNStackKey=\"semaia\"
+"""
+
