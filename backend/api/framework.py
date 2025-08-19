@@ -1,10 +1,13 @@
+import asyncio
 import json
-from typing import Callable, Awaitable, Mapping, AsyncIterable, Any
+from typing import Callable, Mapping, AsyncIterable, Any
 from urllib.parse import parse_qs as _parse_qs
 
-Scope = dict[str, object]
-Receive = Callable[[], Awaitable[dict[str, object]]]
-Send = Callable[[dict[str, object]], Awaitable[None]]
+from utils import custom_serializer  # noqa
+
+from signatures import Send, stream_headers, Receive, cors_headers
+
+all_headers = [*stream_headers, *cors_headers]
 
 
 async def respond(send: Send, status: int = 200, body: Mapping = None, headers: Mapping = None) -> None:
@@ -22,7 +25,7 @@ async def respond(send: Send, status: int = 200, body: Mapping = None, headers: 
         The headers' keys and values will be encoded as bytes.
     :return: None
     """
-    payload = json.dumps(body or {}).encode()
+    payload = json.dumps(body or {}, default=custom_serializer).encode()
     if headers is None:
         headers = {}
     base = [
@@ -49,13 +52,8 @@ async def stream(send: Send, events: AsyncIterable[str]) -> None:
         sent to the client as SSE events.
     :return: None
     """
-    headers = [
-        (b'content-type', b'text/event-stream'),
-        (b'cache-control', b'no-cache, no-transform'),
-        (b'connection', b'keep-alive'),
-        (b'x-accel-buffering', b'no'),
-    ]
-    await send({'type': 'http.response.start', 'status': 200, 'headers': headers})
+
+    await send({'type': 'http.response.start', 'status': 200, 'headers': all_headers})
 
     async for each in events:
         await send({'type': 'http.response.body', 'body': each.encode(), 'more_body': True})
@@ -106,3 +104,13 @@ async def json_body(receive: Receive) -> dict[str, Any]:
         return json.loads(body.decode("utf-8"))
     except Exception:
         return {}
+
+
+async def run_blocking(fn: Callable[[], Any]) -> Any:
+    """
+    Helper to offload blocking work (e.g., boto3 DynamoDB call)
+    :param fn: Callable that returns a value
+    :return: The result of the callable
+    """
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, fn)
