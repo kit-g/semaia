@@ -1,5 +1,6 @@
 import json
 from typing import Any, AsyncIterable, Mapping
+from contextlib import asynccontextmanager
 
 from signatures import Send, cors_headers, stream_headers
 
@@ -63,8 +64,16 @@ async def send_event(
     })
 
 
+async def send_token(send: Send, *, event: str | None = None) -> None:
+    await send_event(send, event="token", data={"t": event})
+
+
 async def send_comment(send: Send, text: str = "ping") -> None:
     await send_event(send, event=None, comment=text)
+
+
+async def send_error(send: Send, *, event: Any) -> None:
+    await send_event(send, event="error", data={"message": str(event)})
 
 
 async def finish_stream(send: Send, *, send_done: bool = True) -> None:
@@ -76,3 +85,21 @@ async def finish_stream(send: Send, *, send_done: bool = True) -> None:
 async def stream_iter(send: Send, chunks: AsyncIterable[Any], *, event: str = "message") -> None:
     async for chunk in chunks:
         await send_event(send, event=event, data=chunk)
+
+
+@asynccontextmanager
+async def streaming(send: Send, headers: Mapping[str, str] = None, status: int = 200):
+    """
+    Context manager for streaming responses. Just to show off.
+
+    :param send: The send function to use for sending events.
+    :param headers: The headers to use for the response.
+    :param status: The status code to use for the response.
+    :return: None
+    """
+    await start_stream(send, headers=headers, status=status)
+
+    try:
+        yield  # body
+    finally:
+        await finish_stream(send)  # teardown
