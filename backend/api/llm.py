@@ -20,7 +20,7 @@ def call(*, prompt: str, history: list[dict[str, Any]] = None) -> str:
     return response.text
 
 
-def stream(*, prompt: str, history: list[dict[str, Any]] = None) -> Iterator[str]:
+def stream(prompt: str, *, history: list[dict[str, Any]] = None) -> Iterator[str]:
     if history is None:
         history = []
     response = _ai.models.generate_content_stream(

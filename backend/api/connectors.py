@@ -1,14 +1,19 @@
 import json
 import os
+from datetime import datetime
 from textwrap import dedent
 
 from dynamo import db
 from utils import custom_serializer, run_query
 
+import llm
 import q as queries
 from db import run, connect
 from errors import EmptyResponse, IncorrectSignature
 from models import user_type, connector_type, Connector, with_connector
+from prompts import explain_db_prompt_template
+from signatures import Send
+from sse import send_token, streaming, send_error
 
 _table = os.environ['TABLE_NAME']
 
@@ -143,3 +148,23 @@ def _make_trigger(row: dict) -> dict:
             }
         case _:
             raise IncorrectSignature
+
+
+@with_connector
+async def explain(connector: Connector, send: Send) -> None:
+    connection = connect(connector)
+    inspection = _query(connection, 'inspect', {'schemata': None})
+    prompt = explain_db_prompt_template.format(
+        database_name=connector.database,
+        schema_json=json.dumps(inspection),
+        date=datetime.now().strftime('%A, %B %d, %Y')
+    )
+
+    async with streaming(send):
+        try:
+            for chunk in llm.stream(prompt=prompt):
+                await send_token(send, event=chunk)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            await send_error(send, event=e)
