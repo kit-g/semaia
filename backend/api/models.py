@@ -1,10 +1,11 @@
+import json
 import os
 from dataclasses import dataclass
 from functools import wraps
 from typing import Final, Any, Self, TypeVar, Callable, Dict
 
 from dynamo import TypedModelWithSortableKey, Ksuid, db, DynamoModel
-from utils import snake_to_camel  # noqa
+from utils import snake_to_camel, custom_serializer  # noqa
 
 from errors import NotFound
 
@@ -103,6 +104,9 @@ class Connector(TypedModelWithSortableKey):
         )
 
     def to_connection(self) -> dict[str, Any]:
+        """
+        Minimal representation, used to connect to an instance
+        """
         return {
             'host': self.host,
             'port': self.port,
@@ -120,6 +124,9 @@ class Connector(TypedModelWithSortableKey):
         }
 
     def public(self) -> dict:
+        """
+        Returned to the client
+        """
         return self.to_dict() | {'id': self._id}
 
     @staticmethod
@@ -165,8 +172,12 @@ class Message(DynamoModel):
             'id': f'{self.id}',
         }
 
-    def to_dict(self) -> dict:
-        return self._to_item()
+    def to_dict(self, order: int = None) -> dict:
+        return self._to_item() | {
+            'created': self.id.datetime.isoformat(),
+            'model': 'gemini-2.5-flash',
+            'order': order,
+        }
 
     @classmethod
     def from_item(cls, record: dict) -> Self:
@@ -206,6 +217,7 @@ class Chat(TypedModelWithSortableKey):
     connector_id: str
     user_id: str
     messages: list[Message] = None
+    query_results: tuple[list[str], list[dict]] = None  # list of column names, list of row dicts
     _id: Ksuid = None
     _pk: str = None
     _sk: str = None
@@ -219,6 +231,11 @@ class Chat(TypedModelWithSortableKey):
             'messages': [
                 {'M': each.to_item()} for each in self.messages
             ],
+            'query_results': json.dumps(
+                self.query_results,
+                default=custom_serializer,
+            )
+            if self.query_results else '',
         }
 
     @classmethod
@@ -234,10 +251,14 @@ class Chat(TypedModelWithSortableKey):
     @classmethod
     def from_item(cls, record: dict) -> Self:
         sk = record['SK']['S']
-        _id = sk.split('#')[1]
+        _id = Ksuid.from_base62(sk.split('#')[1])
         pk = record['PK']['S']
         user_id = pk.split('#')[1]
         messages = record.get('messages', {}).get('L', [])
+        try:
+            query_results = json.loads(record.get('query_results', {}).get('S'))
+        except TypeError:
+            query_results = None
         return cls(
             _id=_id,
             _pk=pk,
@@ -248,18 +269,32 @@ class Chat(TypedModelWithSortableKey):
             connector_id=record['connector_id']['S'],
             messages=[
                 Message.from_item(each['M']) for each in messages
-            ]
+            ],
+            query_results=query_results,
         )
 
     def to_dict(self) -> dict:
         return {
-            'id': self._id,
+            'id': f'{self._id}',
             'query': self.initial_query,
             'prompt': self.initial_prompt,
+            'created': self.created.isoformat(),
             'messages': [
-                each.to_dict() for each in self.messages
+                each.to_dict(index) for index, each in enumerate(self.messages)
             ],
+            'query_results': self._query_results(),
         }
+
+    def _query_results(self) -> dict | None:
+        match self.query_results:
+            case columns, rows:
+                return {
+                    'columns': columns,
+                    'rows': [
+                        dict(zip(columns, row)) for row in rows
+                    ],
+                    'query': self.initial_query,
+                }
 
     @property
     def type(self) -> str:
@@ -289,13 +324,13 @@ class Chat(TypedModelWithSortableKey):
     @staticmethod
     def query_pk(user_id: str) -> dict:
         return {
-            'PK': {'S': f'{user_type}#{user_id}'},
+            ':PK': {'S': f'{user_type}#{user_id}'},
         }
 
     @staticmethod
     def key(user_id: str, chat_id: str) -> dict:
         return {
-            **Chat.query_pk(user_id),
+            'PK': {'S': f'{user_type}#{user_id}'},
             'SK': {'S': f'{chat_type}#{chat_id}'},
         }
 
@@ -330,6 +365,7 @@ def with_connector(func: F) -> F:
                  its original parameters.
     :return: The wrapped function that provides a connector as the first argument.
     """
+
     @wraps(func)
     def wrapper(connector_id: str, user_id: str, *args, **kwargs) -> dict:
         connector = _get_connector(connector_id, user_id)
@@ -363,6 +399,7 @@ def with_chat(func: F) -> F:
     :return: The wrapped function that will be called with the fetched chat object
              as its first argument.
     """
+
     @wraps(func)
     def wrapper(chat_id: str, user_id: str, *args, **kwargs) -> dict:
         chat = _get_chat(chat_id, user_id)
