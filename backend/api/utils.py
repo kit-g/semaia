@@ -26,7 +26,7 @@ def custom_serializer(obj):
         case Decimal():
             return int(obj)
         case _:
-            raise TypeError("Type not serializable")
+            raise TypeError(f"Type {type(obj)} not serializable")
 
 
 def run_query(connection, q: str) -> tuple[list, list]:
