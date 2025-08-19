@@ -60,19 +60,21 @@ class _SqlQueryResult implements SqlQueryResult {
   });
 
   factory _SqlQueryResult.fromJson(Map json) {
-    return switch (json) {
-      {
+    switch (json) {
+      case {
         'columns': List columns,
         'rows': List rows,
         'query': String query,
-      } =>
-        _SqlQueryResult(
+      }:
+        final cols = List<String>.from(columns);
+        return _SqlQueryResult(
           query: query,
-          columns: List<String>.from(columns),
-          rows: rows.map((rowJson) => _Row.fromJson(rowJson, List<String>.from(columns))).toList(),
-        ),
-      _ => throw ArgumentError(json),
-    };
+          columns: cols,
+          rows: rows.map((r) => _Row.fromJson(r, cols)).toList(),
+        );
+      default:
+        return throw ArgumentError(json);
+    }
   }
 
   @override
