@@ -1,0 +1,6 @@
+{
+  "apiGateway": "d2ewj8svua35to.cloudfront.net",
+  "domain": "localhost:7357",
+  "env": "local",
+  "logLevel": "ALL"
+}
