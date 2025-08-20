@@ -10,4 +10,6 @@ abstract interface class ConnectorService {
   Future<Connector> updateConnector(Connector connector);
 
   Future<void> deleteConnector(String id);
+
+  Stream<String?> explainDatabase(String connectorId);
 }
