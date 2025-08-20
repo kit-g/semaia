@@ -620,6 +620,14 @@ class L {
     );
   }
 
+  String get explainDatabase {
+    return Intl.message(
+      'Explain database',
+      name: 'explainDatabase',
+      desc: 'Feature tooltip',
+    );
+  }
+
   String get password {
     return Intl.message(
       'Password',
