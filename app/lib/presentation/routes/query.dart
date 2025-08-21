@@ -145,7 +145,7 @@ class _QueryPageState extends State<QueryPage> with AfterLayoutMixin<QueryPage> 
                                             onPressed: () {
                                               ContextMenuController.removeAny();
 
-                                              final link = context.sharePulseQuery(_codeController.selectedText);
+                                              final link = context.shareQuery(_codeController.selectedText);
                                               copyToClipboard(link);
                                               snack(context, L.of(context).copied);
                                             },

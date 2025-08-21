@@ -101,7 +101,7 @@ extension ContextNavigation on BuildContext {
     return GoRouterState.of(this).uri.queryParameters;
   }
 
-  String sharePulseQuery(String toShare) {
+  String shareQuery(String toShare) {
     return AppConfig.url(
       _queryPath,
       {'q': Uri.encodeComponent(toShare)},
