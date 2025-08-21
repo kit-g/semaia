@@ -1,6 +1,6 @@
 ## semaia_models
 
-A data class and interface package for the PulsQL Flutter app. It does not contain any dependencies and should stay that
+A data class and interface package for the Semaia Flutter app. It does not contain any dependencies and should stay that
 way.
 
 ## Installation
