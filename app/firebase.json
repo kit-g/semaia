@@ -1,0 +1,31 @@
+{
+  "flutter": {
+    "platforms": {
+      "macos": {
+        "default": {
+          "projectId": "semaia",
+          "appId": "1:1020752877388:ios:c698baebd5bcbac470a1e9",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        },
+        "buildConfigurations": {
+          "Debug": {
+            "projectId": "semaia",
+            "appId": "1:1020752877388:ios:c698baebd5bcbac470a1e9",
+            "uploadDebugSymbols": false,
+            "fileOutput": "macos/Runner/GoogleService-Info.plist"
+          }
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "semaia",
+          "configurations": {
+            "macos": "1:1020752877388:ios:c698baebd5bcbac470a1e9",
+            "web": "1:1020752877388:web:f39af86cd62d2fdc70a1e9"
+          }
+        }
+      }
+    }
+  }
+}
