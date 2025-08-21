@@ -68,7 +68,7 @@ def user_of(event: dict) -> str:
         raise
 
 
-async def router(event: dict[str, object], send: Send, receive: Receive) -> dict | tuple[dict | None, int]:
+async def router(event: dict[str, object], send: Send, receive: Receive) -> dict | tuple[dict | None, int] | None:
     match event:
         case {  # uvicorn event
                  'path': path,
@@ -103,6 +103,8 @@ async def router(event: dict[str, object], send: Send, receive: Receive) -> dict
                     return connectors.inspect(connector_id, user, payload)
                 case ['', 'connectors', connector_id, 'query'], 'POST':
                     return connectors.query(connector_id, user, payload)
+                case ['', 'connectors', connector_id, 'explain'], 'POST':
+                    return await connectors.explain(connector_id, user, send)
 
                 case ['', 'connectors', connector_id, 'chats'], 'POST':
                     return await chats.start_chat(connector_id, user, send, payload, stream=True)

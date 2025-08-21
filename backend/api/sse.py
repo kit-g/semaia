@@ -1,6 +1,6 @@
 import json
-from typing import Any, AsyncIterable, Mapping
 from contextlib import asynccontextmanager
+from typing import Any, Mapping
 
 from signatures import Send, cors_headers, stream_headers
 
@@ -68,10 +68,6 @@ async def send_token(send: Send, *, event: str | None = None) -> None:
     await send_event(send, event="token", data={"t": event})
 
 
-async def send_comment(send: Send, text: str = "ping") -> None:
-    await send_event(send, event=None, comment=text)
-
-
 async def send_error(send: Send, *, event: Any) -> None:
     await send_event(send, event="error", data={"message": str(event)})
 
@@ -80,11 +76,6 @@ async def finish_stream(send: Send, *, send_done: bool = True) -> None:
     if send_done:
         await send_event(send, event="done", data={})
     await send({"type": "http.response.body", "body": b"", "more_body": False})
-
-
-async def stream_iter(send: Send, chunks: AsyncIterable[Any], *, event: str = "message") -> None:
-    async for chunk in chunks:
-        await send_event(send, event=event, data=chunk)
 
 
 @asynccontextmanager
