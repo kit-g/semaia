@@ -162,7 +162,7 @@ class _EditField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final L(:askChatGPT) = L.of(context);
+    final L(:askAI) = L.of(context);
     final ThemeData(:colorScheme) = Theme.of(context);
     final controller = TextEditingController();
     return ValueListenableBuilder<bool>(
@@ -179,7 +179,7 @@ class _EditField extends StatelessWidget {
               controller: controller,
               decoration: InputDecoration(
                 filled: true,
-                hintText: askChatGPT,
+                hintText: askAI,
                 suffixIcon: switch (loading) {
                   true => const SizedBox(
                     height: 12,
@@ -189,7 +189,7 @@ class _EditField extends StatelessWidget {
                   false => Transform.rotate(
                     angle: -math.pi / 8,
                     child: IconButton(
-                      tooltip: askChatGPT,
+                      tooltip: askAI,
                       onPressed: switch (enabled) {
                         false => null,
                         true => () => _onSubmit(context, controller),

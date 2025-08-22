@@ -19,7 +19,6 @@ class TemperatureSlider extends StatelessWidget {
       children: [
         Slider(
           value: temperature,
-          // ChatGPT max and min values
           min: 0,
           max: 2,
           divisions: 20,

@@ -268,7 +268,7 @@ class L {
 
   String get threadsEmptyStateTitle {
     return Intl.message(
-      'This is Threads, \nconversations with ChatGPT',
+      'This is Threads, \nconversations with AI',
       name: 'threadsEmptyStateBody',
       desc: 'Threads empty state copy',
     );
@@ -276,7 +276,7 @@ class L {
 
   String get threadsEmptyStateBody {
     return Intl.message(
-      'Nothing here yet.\nA thread always starts with an SQL query and a prompt.\nFrom your console, highlight the query you want to run and submit to ChatGPT, right-click (on Windows) or two-finger tap (on MacOS) on the highlighted query and choose "$runQueryAndStartThread" in the context menu. This will open an new thread and suggest to submit a ChatGPT prompt. Ask you question and press the paper plane button. This will initiate a conversation',
+      'Nothing here yet.\nA thread always starts with an SQL query and a prompt.\nFrom your console, highlight the query you want to run and submit to AI, right-click (on Windows) or two-finger tap (on MacOS) on the highlighted query and choose "$runQueryAndStartThread" in the context menu. This will open an new thread and suggest to submit a AI prompt. Ask you question and press the paper plane button. This will initiate a conversation',
       name: 'threadsEmptyStateBody',
       desc: 'Threads empty state copy',
     );
@@ -338,10 +338,10 @@ class L {
     );
   }
 
-  String get askChatGPT {
+  String get askAI {
     return Intl.message(
-      'Ask ChatGPT',
-      name: 'askChatGPT',
+      'Ask AI',
+      name: 'askAI',
       desc: 'Button label',
     );
   }
