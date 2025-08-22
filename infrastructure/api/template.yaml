@@ -17,7 +17,6 @@ Mappings:
     prod:
       CloudFrontCertificate: "arn:aws:acm:us-east-1:583168578067:certificate/a75e5272-2b90-45d2-abbd-0b52b158f1d7"
       CloudFrontDomainName: "semaia.awry.me"
-      GatewayCertificate: "arn:aws:acm:us-east-1:583168578067:certificate/eebb2e14-3cd9-437c-a131-c494b4b83d3f"
 
 Parameters:
   Env:
@@ -31,6 +30,13 @@ Parameters:
   LayersBucket:
     Type: String
     Default: "583168578067-lambda-layers"
+  CloudFrontCertificate:
+    Type: String
+    Default: "arn:aws:acm:us-east-1:583168578067:certificate/a75e5272-2b90-45d2-abbd-0b52b158f1d7"
+  CloudFrontDomainName:
+    Type: String
+    Default: "semaia.awry.me"
+
 
 Resources:
   WorkoutsDatabase:
@@ -189,6 +195,15 @@ Resources:
             OriginRequestPolicyId: !Ref OriginRequestPolicyAuth
 
         Comment: 'Semaia web app'
+        CustomErrorResponses:
+          - ErrorCode: 403 # Forbidden (happens when S3 can't find a sub-path)
+            ResponsePagePath: '/index.html'
+            ResponseCode: 200
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 404 # Not Found
+            ResponsePagePath: '/index.html'
+            ResponseCode: 200
+            ErrorCachingMinTTL: 10
         DefaultRootObject: index.html
         DefaultCacheBehavior:
           AllowedMethods:
@@ -202,14 +217,10 @@ Resources:
           CachePolicyId: "658327ea-f89d-4fab-a63d-7e88639e58f6"  # CachingOptimized
           TargetOriginId: !Ref SiteHostingBucket
           ViewerProtocolPolicy: redirect-to-https
-        #          ForwardedValues:
-        #            QueryString: 'false'
-        #            Cookies:
-        #              Forward: none
-        #        Aliases: [ !Ref Domain ]
-        #        ViewerCertificate:
-        #          AcmCertificateArn: !Ref CloudFrontCertificate
-        #          SslSupportMethod: 'sni-only'
+        Aliases: [ !Ref CloudFrontDomainName ]
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CloudFrontCertificate
+          SslSupportMethod: 'sni-only'
         Enabled: 'true'
         Origins:
           - Id: !Ref SiteHostingBucket
