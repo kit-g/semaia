@@ -84,13 +84,13 @@ class _AppState extends State<_App> with AfterLayoutMixin<_App> {
       ],
       theme: theme(
         ColorScheme.fromSeed(
-          seedColor: const Color(0xEA7822AB),
+          seedColor: const Color(0xEA0DA6C0),
           brightness: Brightness.light,
         ),
       ),
       darkTheme: theme(
         ColorScheme.fromSeed(
-          seedColor: const Color(0xEA7510E1),
+          seedColor: const Color(0xEA0DA6C0),
           brightness: Brightness.dark,
         ),
       ),

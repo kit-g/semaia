@@ -34,7 +34,10 @@ class AppFrame extends StatelessWidget {
             );
           },
         ),
-        title: Text(_title(context)),
+        title: Text(
+          _title(context),
+          style: _style(context),
+        ),
         actions: [
           Selector<Auth, (String?, String?)>(
             selector: (_, provider) => (provider.user?.displayName, provider.user?.email),
@@ -105,15 +108,24 @@ class AppFrame extends StatelessWidget {
     try {
       final (:appName, :version, :build) = PackageProvider.of(context).package;
       showAboutDialog(context: context, applicationName: appName, applicationVersion: '$version+$build');
-    } catch (_) {
+    } catch (e) {
+      print(e);
       //
     }
   }
 
   String _title(BuildContext context) {
     return switch (GoRouterState.of(context).matchedLocation.split('/')) {
+      ['', 'login'] => 'Semaia',
       ['', String path] => '${path.substring(0, 1).toUpperCase()}${path.substring(1)}',
       _ => '',
+    };
+  }
+
+  TextStyle? _style(BuildContext context) {
+    return switch (GoRouterState.of(context).matchedLocation.split('/')) {
+      ['', 'login'] => const TextStyle(fontFamily: 'Parisienne', fontSize: 40),
+      _ => null,
     };
   }
 }

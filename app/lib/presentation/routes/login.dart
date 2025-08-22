@@ -25,7 +25,6 @@ class _LoginPageState extends State<LoginPage> with ShowsSnackOnError<LoginPage>
         return child!;
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(logIn)),
         body: ValueListenableBuilder<bool>(
           valueListenable: loader,
           child: const Center(child: CircularProgressIndicator()),
@@ -34,7 +33,19 @@ class _LoginPageState extends State<LoginPage> with ShowsSnackOnError<LoginPage>
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 3),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Icon(Icons.auto_awesome),
+                        Text(
+                          'Postgres with a touch of magic',
+                          style: TextStyle(fontFamily: 'Parisienne', fontSize: 32),
+                        ),
+                        Icon(Icons.auto_awesome),
+                      ],
+                    ),
                     const SizedBox(height: 32),
                     GoogleSignInButton(
                       onPressed: () {
