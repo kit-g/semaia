@@ -81,6 +81,10 @@ flutter:
         - asset: assets/fonts/Mono/JetBrainsMono-VariableFont_wght.ttf
           weight: 400
 
+    - family: "Parisienne"
+      fonts:
+        - asset: assets/fonts/Parisienne/Parisienne-Regular.ttf
+
 flutter_launcher_icons:
   web:
     generate: true
