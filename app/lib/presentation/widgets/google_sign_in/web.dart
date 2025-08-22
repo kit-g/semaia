@@ -13,10 +13,11 @@ class GoogleSignInButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return renderButton(
       configuration: GSIButtonConfiguration(
-        type: GSIButtonType.icon,
+        type: GSIButtonType.standard,
         shape: GSIButtonShape.pill,
-        theme: GSIButtonTheme.outline,
+        theme: GSIButtonTheme.filledBlue,
         size: GSIButtonSize.large,
+        text: GSIButtonText.continueWith,
       ),
     );
   }

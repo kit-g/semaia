@@ -18,16 +18,18 @@ class GoogleSignInButton extends StatelessWidget {
           top: 0,
           bottom: 0,
           left: 24,
-          child: Icon(Icons.transit_enterexit),
-          // child: Icon(CustomIcons.google),
+          child: Icon(Icons.login),
         ),
         OutlinedButton(
           onPressed: onPressed,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(logInWithGoogle),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(logInWithGoogle),
+              ],
+            ),
           ),
         ),
       ],
