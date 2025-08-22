@@ -1,5 +1,5 @@
 {
-  "apiGateway": "api.semaia.awry.me",
+  "apiGateway": "semaia.awry.me",
   "domain": "semaia.awry.me",
   "env": "prod",
   "logLevel": "NONE"

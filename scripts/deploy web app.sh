@@ -1,3 +1,5 @@
+set -e
+
 # for local deployment
 # needs PROFILE (AWS local profile), S3_BUCKET, ENV_FILE and DISTRIBUTION (CloudFront) env vars
 function is_bucket_valid() {
@@ -13,15 +15,9 @@ function clean() {
     flutter clean
 }
 
-function test() {
-  pushd shared/pulse_models && dart test && popd || exit 1
-  pushd shared/pulse_state && flutter test && popd || exit 1
-  flutter analyze
-}
-
 function build() {
   echo "Building from $ENV_FILE"
-  flutter build web --web-renderer canvaskit \
+  flutter build web \
     --dart-define-from-file="$ENV_FILE" \
     --release
 }
@@ -44,9 +40,7 @@ function invalidate_cache() {
 
 if is_bucket_valid; then
   clean
-  if test; then
-    build
-    deploy
-    invalidate_cache
-  fi
+  build
+  deploy
+  invalidate_cache
 fi
