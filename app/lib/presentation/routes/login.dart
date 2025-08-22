@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:semaia/presentation/widgets/google_sign_in/button.dart';
-import 'package:semaia_language/semaia_language.dart';
 import 'package:semaia_state/semaia_state.dart';
 import 'package:semaia/core/utils/misc.dart';
 import 'package:semaia/core/utils/visual.dart';
@@ -17,7 +16,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> with ShowsSnackOnError<LoginPage>, LoadingState, AfterLayoutMixin {
   @override
   Widget build(BuildContext context) {
-    final L(:logIn, :logInWithGoogle) = L.of(context);
     return Selector<Auth, bool>(
       selector: (_, provider) => provider.isInitialized,
       builder: (context, initialized, child) {

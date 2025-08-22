@@ -314,14 +314,6 @@ class L {
     );
   }
 
-  String get goToStash {
-    return Intl.message(
-      'Go to Stash',
-      name: 'goToStash',
-      desc: 'Button label',
-    );
-  }
-
   String get openThreads {
     return Intl.message(
       'Open threads',
@@ -354,14 +346,6 @@ class L {
     );
   }
 
-  String get stashEmptyStateTitle {
-    return Intl.message(
-      'This is your stash',
-      name: 'stashEmptyState',
-      desc: 'Button label',
-    );
-  }
-
   String get temperatureDefinition {
     return Intl.message(
       'You can think of temperature like randomness, with 0 being least random (or most deterministic) and 2 being most random (least deterministic). When using low values for temperature (e.g. 0.2) the model responses will tend to be more consistent but may feel more robotic. Values higher than 1.0, especially values close to 2.0, can lead to erratic model outputs. If your goal is creative outputs, a combination of a slightly higher than normal temperature (e.g. 1.2) combined with a prompt specifically asking the model to be creative may be your best bet, but we encourage experimentation.',
@@ -383,14 +367,6 @@ class L {
       'Model: $v',
       name: 'modelLabel',
       desc: 'Chat label',
-    );
-  }
-
-  String get stashEmptyStateBody {
-    return Intl.message(
-      'Here you can store your queries and prompts and re-use them later',
-      name: 'stashEmptyState',
-      desc: 'Button label',
     );
   }
 
@@ -482,22 +458,6 @@ class L {
     );
   }
 
-  String get issueDescription {
-    return Intl.message(
-      'Issue description',
-      name: 'issueDescription',
-      desc: 'As in "Jira issue description"',
-    );
-  }
-
-  String get issueComments {
-    return Intl.message(
-      'Issue comments',
-      name: 'issueComments',
-      desc: 'Jira comments label',
-    );
-  }
-
   String get newQuery {
     return Intl.message(
       'New query',
@@ -519,30 +479,6 @@ class L {
       'Cannot be empty',
       name: 'cannotBeEmpty',
       desc: 'Button label',
-    );
-  }
-
-  String get newStashNameHint {
-    return Intl.message(
-      'e.g. Get jira issues',
-      name: 'newStashNameHint',
-      desc: 'Button label',
-    );
-  }
-
-  String jiraStatus(String status) {
-    return Intl.message(
-      'Jira issue status: $status',
-      name: 'jiraStatus',
-      desc: 'tooltip',
-    );
-  }
-
-  String jiraType(String type) {
-    return Intl.message(
-      'Jira issue type: $type',
-      name: 'jiraType',
-      desc: 'tooltip',
     );
   }
 
@@ -585,22 +521,6 @@ class L {
       name: 'beforeDate',
       desc: 'label, "Before Jan 1"',
       args: [date],
-    );
-  }
-
-  String get newStashContentHint {
-    return Intl.message(
-      'e.g. SELECT * FROM jira.issues LIMIT 100;',
-      name: 'newStashNameHint',
-      desc: 'Button label',
-    );
-  }
-
-  String get newStashDescriptionHint {
-    return Intl.message(
-      'e.g. Explain what this does',
-      name: 'newStashDescriptionHint',
-      desc: 'Button label',
     );
   }
 

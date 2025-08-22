@@ -109,7 +109,6 @@ class AppFrame extends StatelessWidget {
       final (:appName, :version, :build) = PackageProvider.of(context).package;
       showAboutDialog(context: context, applicationName: appName, applicationVersion: '$version+$build');
     } catch (e) {
-      print(e);
       //
     }
   }

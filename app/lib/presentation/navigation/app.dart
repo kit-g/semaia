@@ -131,7 +131,6 @@ Future<void> _initApp(BuildContext context, {User? user, String? sessionToken}) 
   Api.instance.defaultHeaders = headers;
 
   inspector.init();
-  // Stashes.of(context).init();
   chats.init();
   package.init(
     () {

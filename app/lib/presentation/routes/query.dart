@@ -183,7 +183,6 @@ class _QueryPageState extends State<QueryPage> with AfterLayoutMixin<QueryPage> 
                                 valueListenable: _inConversation,
                                 builder: (__, inConversation, _) {
                                   return _ManagementRow(
-                                    onGoToStash: Scaffold.of(context).openEndDrawer,
                                     onThreads: () => _inConversation.value = !_inConversation.value,
                                     open: inConversation,
                                   );
@@ -463,12 +462,10 @@ extension on CodeController {
 }
 
 class _ManagementRow extends StatelessWidget {
-  final VoidCallback onGoToStash;
   final VoidCallback onThreads;
   final bool open;
 
   const _ManagementRow({
-    required this.onGoToStash,
     required this.onThreads,
     required this.open,
   });
@@ -476,10 +473,10 @@ class _ManagementRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData(:colorScheme) = Theme.of(context);
-    final L(:openThreads, :goToStash, :closeThreads) = L.of(context);
+    final L(:openThreads, :closeThreads) = L.of(context);
     return Container(
       height: 40,
-      width: 84,
+      width: 42,
       decoration: BoxDecoration(
         color: colorScheme.secondary,
         borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8)),
@@ -500,14 +497,6 @@ class _ManagementRow extends StatelessWidget {
               ),
               false => const Icon(Icons.forum),
             },
-          ),
-          IconButton(
-            tooltip: goToStash,
-            iconSize: 24,
-            splashRadius: 12,
-            onPressed: onGoToStash,
-            color: colorScheme.onSecondary,
-            icon: const Icon(Icons.save_alt),
           ),
         ],
       ),
