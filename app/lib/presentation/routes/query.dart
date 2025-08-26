@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 import 'package:pluto_grid/pluto_grid.dart';
+import 'package:provider/provider.dart';
 import 'package:semaia/presentation/widgets/query/inspector/lib.dart';
 import 'package:semaia_api/semaia_api.dart';
 import 'package:semaia_language/semaia_language.dart';
@@ -472,18 +473,44 @@ class _ManagementRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData(:colorScheme) = Theme.of(context);
+    final ThemeData(:colorScheme, :textTheme) = Theme.of(context);
     final L(:openThreads, :closeThreads) = L.of(context);
     return Container(
       height: 40,
-      width: 42,
+      width: 140,
       decoration: BoxDecoration(
         color: colorScheme.secondary,
         borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Consumer<DatabaseInspector>(
+              builder: (_, inspector, _) {
+                final connector = inspector.selectedConnector ?? inspector.firstOrNull;
+                return DropdownButton<Connector>(
+                  value: connector,
+                  dropdownColor: colorScheme.primary,
+                  items: inspector.map(
+                    (each) {
+                      return DropdownMenuItem<Connector>(
+                        value: each,
+                        child: Text(
+                          each.name,
+                          style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary),
+                        ),
+                      );
+                    },
+                  ).toList(),
+                  onChanged: (connector) {
+                    inspector.selectedConnector = connector;
+                  },
+                );
+              },
+            ),
+          ),
           IconButton(
             tooltip: open ? closeThreads : openThreads,
             iconSize: 24,
