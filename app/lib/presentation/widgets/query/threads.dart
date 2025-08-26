@@ -11,7 +11,6 @@ import 'package:semaia/core/utils/misc.dart';
 import 'package:semaia/core/utils/visual.dart';
 import 'package:semaia/presentation/widgets/loader.dart';
 import 'package:semaia/presentation/widgets/query/query_results.dart';
-import 'package:semaia/presentation/widgets/query/temperature_slider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class ThreadsView extends StatefulWidget {
@@ -469,15 +468,10 @@ class _OwnMessage extends StatelessWidget {
                       },
                     ),
                     switch (bead.model) {
-                      'None' => Selector<Chats, String>(
-                        selector: (_, provider) => provider.model.value,
-                        builder: (_, model, __) {
-                          return Text(
-                            L.of(context).modelLabel(model),
+                      'None' => Text(
+                            L.of(context).modelLabel('gemini-2.5-flash'),
                             style: textTheme.labelSmall,
-                          );
-                        },
-                      ),
+                          ),
                       _ => Text(
                         L.of(context).modelLabel(bead.model),
                         style: textTheme.labelSmall,
@@ -514,51 +508,6 @@ class _ManagementRow extends StatelessWidget {
             splashRadius: 12,
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back_rounded),
-          ),
-          Selector<Chats, LLM>(
-            selector: (_, provider) => provider.model,
-            builder: (context, model, _) {
-              return DropdownButton<LLM>(
-                items: LLM.values.map(
-                  (m) {
-                    return DropdownMenuItem<LLM>(
-                      value: m,
-                      child: Text(m.value),
-                    );
-                  },
-                ).toList(),
-                value: model,
-                onChanged: (v) {
-                  if (v != null) {
-                    Chats.of(context).model = v;
-                  }
-                },
-              );
-            },
-          ),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 300, maxHeight: 40),
-            child: Selector<Chats, (double, Color)>(
-              selector: (_, provider) => (provider.currentTemperature, provider.currentTemperatureColor),
-              builder: (context, params, _) {
-                final (temp, color) = params;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: TemperatureSlider(
-                    onChanged: (v) => Chats.of(context).currentTemperature = v,
-                    temperature: temp,
-                    color: color,
-                  ),
-                );
-              },
-            ),
-          ),
-          Tooltip(
-            message: temperatureDefinition,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              child: Icon(Icons.help_outline_outlined),
-            ),
           ),
         ],
       ),

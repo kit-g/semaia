@@ -18,6 +18,8 @@ abstract interface class DbDatabase implements DbPart {
   List<DbSchema> get schemata;
 
   factory DbDatabase.fromJson(Map json) = _Database.fromJson;
+
+  bool get isEmpty;
 }
 
 abstract interface class DbSchema implements DbPart, Comparable<DbSchema> {
@@ -133,6 +135,9 @@ class _Database implements DbDatabase {
 
   @override
   String? get definition => null;
+
+  @override
+  bool get isEmpty => schemata.isEmpty;
 }
 
 class _Schema implements DbSchema {

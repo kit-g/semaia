@@ -408,14 +408,3 @@ class EmptyBead with Chunks implements Bead {
   @override
   set queryResult(SqlQueryResult? v) {}
 }
-
-enum LLM {
-  gpt4o('gpt-4o'),
-  gpt4oMini('gpt-4o-mini'),
-  gpt4Turbo('gpt-4-turbo'),
-  gpt35Turbo('gpt-3.5-turbo');
-
-  final String value;
-
-  const LLM(this.value);
-}

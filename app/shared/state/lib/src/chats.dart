@@ -13,7 +13,6 @@ class Chats with ChangeNotifier, Iterable<Chat> implements SignOutStateSentry {
   bool isInitialized = false;
   bool _inListView = true;
   double _currentTemperature = .7;
-  LLM _model = LLM.gpt4o;
 
   double get currentTemperature => _currentTemperature;
 
@@ -22,13 +21,6 @@ class Chats with ChangeNotifier, Iterable<Chat> implements SignOutStateSentry {
   set currentTemperature(double value) {
     _currentTemperature = value;
     assert(_currentTemperature <= 2 && _currentTemperature >= 0);
-    notifyListeners();
-  }
-
-  LLM get model => _model;
-
-  set model(LLM value) {
-    _model = value;
     notifyListeners();
   }
 
@@ -103,7 +95,7 @@ class Chats with ChangeNotifier, Iterable<Chat> implements SignOutStateSentry {
                     id: KSUID.generate().asString,
                     threadId: chatId,
                     prompt: prompt,
-                    model: _model.name,
+                    model: 'gemini-2.5-flash',
                   );
 
                   thread.string(bead);
@@ -143,7 +135,7 @@ class Chats with ChangeNotifier, Iterable<Chat> implements SignOutStateSentry {
       id: KSUID.generate().asString,
       threadId: threadId,
       prompt: prompt,
-      model: model.name,
+      model: 'gemini-2.5-flash',
     );
 
     _chats[threadId]?.$2.string(bead);

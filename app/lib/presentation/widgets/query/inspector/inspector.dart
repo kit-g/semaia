@@ -113,7 +113,7 @@ class _InspectorState extends State<Inspector> with LoadingState {
                       structure.map<TreeNode<_DbTreeNode>>(
                         (connector) {
                           final databaseNodes =
-                              structure[connector]?.databases.map(
+                              structure[connector]?.databases.where((db) => !db.isEmpty).map(
                                 (db) {
                                   final schemaNodes = db.schemata.map(
                                     (schema) {
