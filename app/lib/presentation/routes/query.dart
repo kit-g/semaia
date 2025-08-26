@@ -251,8 +251,8 @@ class _QueryPageState extends State<QueryPage> with AfterLayoutMixin<QueryPage> 
             size: 350,
             builder: (context, area) {
               return Inspector(
-                onDoubleTapTable: (table) {
-                  _runQuery('SELECT * FROM ${table.schema}.${table.name} LIMIT 100;');
+                onDoubleTapTable: (connector, table) {
+                  _runQuery('SELECT * FROM ${table.schema}.${table.name} LIMIT 100;', connector: connector);
                 },
                 onDoubleTapTrigger: (connector, schema, table, trigger) {
                   if (connector.id case String connectorId) {
@@ -309,9 +309,9 @@ class _QueryPageState extends State<QueryPage> with AfterLayoutMixin<QueryPage> 
     }
   }
 
-  Future<void> _runQuery(String query) async {
+  Future<void> _runQuery(String query, {Connector? connector}) async {
     _queryLoader.value = true;
-    var connectorId = DatabaseInspector.of(context).selectedConnector?.id;
+    var connectorId = connector?.id ?? DatabaseInspector.of(context).selectedConnector?.id;
     if (connectorId == null) return;
     return Api.instance
         .sendQuery(connectorId, query)

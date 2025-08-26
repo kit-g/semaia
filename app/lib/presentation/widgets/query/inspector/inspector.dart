@@ -10,7 +10,7 @@ class Inspector extends StatefulWidget {
   });
 
   final void Function(Connector) onDoubleTapConnector;
-  final void Function(DbTable) onDoubleTapTable;
+  final void Function(Connector, DbTable) onDoubleTapTable;
   final void Function(Connector, DbSchema, DbRoutine) onDoubleTapRoutine;
   final void Function(Connector, DbSchema, DbTable, DbTrigger) onDoubleTapTrigger;
 
@@ -327,7 +327,7 @@ class _InspectorState extends State<Inspector> with LoadingState {
 class _Item extends StatelessWidget {
   final TreeNode<_DbTreeNode> node;
   final void Function(Connector) onDoubleTapConnector;
-  final void Function(DbTable) onDoubleTapTable;
+  final void Function(Connector, DbTable) onDoubleTapTable;
   final void Function(Connector, DbSchema, DbRoutine) onDoubleTapRoutine;
   final void Function(Connector, DbSchema, DbTable, DbTrigger) onDoubleTapTrigger;
   final void Function(Connector) onEditConnector;
@@ -660,12 +660,27 @@ class _Item extends StatelessWidget {
       case TreeNode(
         data: _DbTreeNode(part: DbColumn()),
         parent: TreeNode(
+          // table
           parent: TreeNode(
             data: _DbTreeNode(part: DbTable table),
+            // tables folder
+            parent: TreeNode(
+              // schema
+              parent: TreeNode(
+                data: _DbTreeNode(part: DbSchema _),
+                parent: TreeNode(
+                  data: _DbTreeNode(part: DbDatabase _),
+                  // connector
+                  parent: TreeNode(
+                    data: _DbTreeNode(part: Connector connector),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ):
-        onDoubleTapTable(table);
+        onDoubleTapTable(connector, table);
       // same with routines
       case TreeNode(
         data: _DbTreeNode(part: DbRoutine routine),
